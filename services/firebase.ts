@@ -2,21 +2,22 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-// ÖNEMLİ: Kendi Firebase projenizin ayarlarını buraya girin.
-// https://console.firebase.google.com/ adresinden yeni proje oluşturup "Web App" ekleyerek bu bilgileri alabilirsiniz.
-// Eğer bu alanlar boş bırakılırsa, uygulama "Yerel Depolama (Mock)" modunda çalışır.
+// Güvenli erişim için process.env kullanıyoruz (Vite config ile tanımlandı)
+// Typescript hatalarını önlemek için 'as any' kullanıyoruz.
+const getEnv = () => (process as any).env || {};
+const env = getEnv();
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC0QKRPin4w1PucR_rgeoQUS8_ULIXiEAA",
-  authDomain: "evergreenrehber.firebaseapp.com",
-  projectId: "evergreenrehber",
-  storageBucket: "evergreenrehber.firebasestorage.app",
-  messagingSenderId: "573065507920",
-  appId: "1:573065507920:web:ee5a4096ee6f1e0fe58d55",
-  measurementId: "G-SK76XFL81D"
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Quota Lock Check Logic (Duplicated from db.ts to prevent circular deps and init early)
+// Quota Lock Check Logic
 const QUOTA_LOCK_KEY = 'evergreen_quota_exceeded_ts';
 const QUOTA_LOCK_DURATION = 1000 * 60 * 60 * 24; // 24 Hours
 
@@ -32,9 +33,13 @@ const isQuotaExceeded = () => {
     } catch { return false; }
 };
 
-// Check if config is filled AND quota is not exceeded
-const isConfigured = firebaseConfig.apiKey !== "";
+// Config kontrolü: API Key tanımlı mı?
+const isConfigured = !!firebaseConfig.apiKey;
 const shouldEnable = isConfigured && !isQuotaExceeded();
+
+if (!isConfigured) {
+    console.warn("Firebase config is missing. App running in local/offline mode.");
+}
 
 export const app = shouldEnable ? initializeApp(firebaseConfig) : null;
 export const db = shouldEnable && app ? getFirestore(app) : null;

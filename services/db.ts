@@ -173,15 +173,21 @@ const getAllLocalProgress = (userId: string): Record<string, number> => {
     return map;
 }
 
+// Get API Key safely using process.env
+const getGeminiApiKey = () => {
+    return (process as any).env?.VITE_GEMINI_API_KEY;
+}
+
 // Helper function to translate guide using Gemini
 const translateGuideToEnglish = async (guide: Guide): Promise<Guide | null> => {
     try {
-        if (!process.env.API_KEY) {
+        const apiKey = getGeminiApiKey();
+        if (!apiKey) {
             console.error("API Key missing for translation");
             return null;
         }
         
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         
         const prompt = `
         You are a professional translator. Translate the following Turkish JSON guide object to English.
@@ -461,13 +467,14 @@ export const DataService = {
     // 9. Generate AI Content Logic (Shared)
     generateContentWithAI: async (mode: 'topic' | 'auto', topic: string = '', category: string = '', existingGuides: Guide[] = []): Promise<Partial<Guide> & { imageKeyword?: string } | null> => {
         try {
-            if (!process.env.API_KEY) {
-                const msg = "Gemini API Anahtarı eksik! Lütfen .env dosyanızı kontrol edin.";
+            const apiKey = getGeminiApiKey();
+            if (!apiKey) {
+                const msg = "Gemini API Anahtarı eksik! Lütfen .env dosyanızı kontrol edin (VITE_GEMINI_API_KEY).";
                 console.error(msg);
                 alert(msg);
                 return null;
             }
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ apiKey: apiKey });
             const systemInstruction = `Sen uzman bir içerik üreticisi ve SEO uzmanısın. Türkçe içerik üretiyorsun.`;
             
             let userPrompt = "";
