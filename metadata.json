@@ -1,0 +1,5 @@
+{
+  "name": "Evergreen Yol Haritası",
+  "description": "Her zaman güncel, veritabanı gerektirmeyen, JSON tabanlı modern rehber ve yol haritası uygulaması.",
+  "requestFramePermissions": []
+}
