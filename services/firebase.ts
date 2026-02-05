@@ -2,19 +2,15 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-// Güvenli erişim için process.env kullanıyoruz (Vite config ile tanımlandı)
-// Typescript hatalarını önlemek için 'as any' kullanıyoruz.
-const getEnv = () => (process as any).env || {};
-const env = getEnv();
-
+// Firebase Configuration (Hardcoded)
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: env.VITE_FIREBASE_APP_ID,
-  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
+    apiKey: "AIzaSyC0QKRPin4w1PucR_rgeoQUS8_ULIXiEAA",
+    authDomain: "evergreenrehber.firebaseapp.com",
+    projectId: "evergreenrehber",
+    storageBucket: "evergreenrehber.firebasestorage.app",
+    messagingSenderId: "573065507920",
+    appId: "1:573065507920:web:6984b872b963737be58d55",
+    measurementId: "G-NXJ1CYGE57"
 };
 
 // Quota Lock Check Logic
@@ -38,7 +34,7 @@ const isConfigured = !!firebaseConfig.apiKey;
 const shouldEnable = isConfigured && !isQuotaExceeded();
 
 if (!isConfigured) {
-    console.warn("Firebase config is missing. App running in local/offline mode.");
+    console.log("Firebase not configured properly.");
 }
 
 export const app = shouldEnable ? initializeApp(firebaseConfig) : null;

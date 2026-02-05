@@ -1,6 +1,5 @@
 
 import { Guide, SiteSettings } from '../types';
-import { guides as staticGuides } from '../guideData'; // Source for seeding
 import { db, isFirebaseEnabled } from './firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, getDoc, query, where, updateDoc, disableNetwork } from "firebase/firestore";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -11,6 +10,13 @@ export const VALID_CATEGORIES = [
     "Kişisel Gelişim", "Dijital Pazarlama", "Seyahat", 
     "Teknoloji", "Sanat", "Yemek", "Eğitim", "Bilim", 
     "Spor", "Kültür", "Tarih", "Müzik"
+];
+
+export const VALID_CATEGORIES_EN = [
+    "Software", "Finance", "Health", "Hobby", "Lifestyle", 
+    "Self Improvement", "Digital Marketing", "Travel", 
+    "Technology", "Art", "Food", "Education", "Science", 
+    "Sports", "Culture", "History", "Music"
 ];
 
 // Türkçe karakterleri destekleyen sağlam slug oluşturucu
@@ -39,6 +45,7 @@ const sanitizeForFirestore = (data: any) => {
 
 // Default Settings
 const DEFAULT_SETTINGS: SiteSettings = {
+    siteName: "Evergreen Rehber",
     socials: { twitter: '', instagram: '', youtube: '', linkedin: '' },
     themeColor: 'default',
     hero: {
@@ -58,6 +65,10 @@ const DEFAULT_SETTINGS: SiteSettings = {
         intervalMinutes: 1440, // 24 hours
         nextRunTime: Date.now() + 86400000,
         isGenerating: false
+    },
+    apiKeys: {
+        gemini: '',
+        googleAdsId: ''
     }
 };
 
@@ -89,7 +100,6 @@ const checkQuotaLock = (): boolean => {
 let isQuotaExceeded = checkQuotaLock();
 
 // Note: firebase.ts checks this key too. If it's present, db is null, so this block won't run.
-// This is a safety fallback for runtime state changes.
 if (isQuotaExceeded && isFirebaseEnabled && db) {
     try {
         disableNetwork(db).catch(e => console.warn("Network disable warning:", e));
@@ -173,21 +183,10 @@ const getAllLocalProgress = (userId: string): Record<string, number> => {
     return map;
 }
 
-// Get API Key safely using process.env
-const getGeminiApiKey = () => {
-    return (process as any).env?.VITE_GEMINI_API_KEY;
-}
-
 // Helper function to translate guide using Gemini
 const translateGuideToEnglish = async (guide: Guide): Promise<Guide | null> => {
     try {
-        const apiKey = getGeminiApiKey();
-        if (!apiKey) {
-            console.error("API Key missing for translation");
-            return null;
-        }
-        
-        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
         const prompt = `
         You are a professional translator. Translate the following Turkish JSON guide object to English.
@@ -235,10 +234,9 @@ export const DataService = {
 
     // 1. Get Guides by Language (Cached + Circuit Breaker)
     getGuides: async (language: 'tr' | 'en' = 'tr'): Promise<Guide[]> => {
-        // Fallback Logic
+        // Fallback Logic: Return empty if no firebase (Local Mode removed)
         if (!isFirebaseEnabled || !db || isQuotaExceeded) {
-            if (language === 'en') return []; 
-            return staticGuides.map(g => ({...g, language: 'tr'} as Guide));
+            return [];
         }
 
         // Check Cache First
@@ -260,7 +258,6 @@ export const DataService = {
         } catch (e: any) {
             if (e.code === 'resource-exhausted') {
                 setQuotaExceeded();
-                if (language === 'tr') return staticGuides.map(g => ({...g, language: 'tr'} as Guide));
                 return [];
             }
             console.error("Error fetching guides from Firebase:", e);
@@ -297,7 +294,7 @@ export const DataService = {
         }
     },
 
-    // 3. Delete Guide
+    // 3. Delete Guide (Bi-directional: Deletes both TR and EN versions)
     deleteGuide: async (id: string): Promise<void> => {
         if (!isFirebaseEnabled || !db || isQuotaExceeded) {
              console.warn("Operation skipped: Firebase disabled or quota exceeded.");
@@ -305,11 +302,31 @@ export const DataService = {
         }
 
         try {
-            await deleteDoc(doc(db, "guides", id));
-            invalidateCache('guides_');
+            // Determine both ID variants
+            let targetId = id;
+            let siblingId = '';
+
+            if (id.endsWith('_en')) {
+                // If we are deleting the EN version, the sibling is the TR version (remove _en)
+                siblingId = id.replace('_en', '');
+            } else {
+                // If we are deleting the TR version, the sibling is the EN version (add _en)
+                siblingId = id + '_en';
+            }
+
+            // Delete the main requested doc
+            await deleteDoc(doc(db, "guides", targetId));
+            
+            // Attempt to delete the translated sibling
             try {
-                await deleteDoc(doc(db, "guides", id + "_en"));
-            } catch (ignore) {}
+                await deleteDoc(doc(db, "guides", siblingId));
+            } catch (ignore) {
+                // Sibling might not exist, proceed
+            }
+            
+            // Clear cache for both languages
+            invalidateCache('guides_');
+
         } catch (e: any) {
             if (e.code === 'resource-exhausted') setQuotaExceeded();
             else console.error("Error deleting guide:", e);
@@ -428,7 +445,8 @@ export const DataService = {
                 const settings = {
                     ...DEFAULT_SETTINGS,
                     ...data,
-                    autoGen: { ...DEFAULT_SETTINGS.autoGen, ...(data.autoGen || {}) }
+                    autoGen: { ...DEFAULT_SETTINGS.autoGen, ...(data.autoGen || {}) },
+                    apiKeys: { ...DEFAULT_SETTINGS.apiKeys, ...(data.apiKeys || {}) }
                 } as SiteSettings;
                 
                 saveToCache('settings', settings);
@@ -467,39 +485,35 @@ export const DataService = {
     // 9. Generate AI Content Logic (Shared)
     generateContentWithAI: async (mode: 'topic' | 'auto', topic: string = '', category: string = '', existingGuides: Guide[] = []): Promise<Partial<Guide> & { imageKeyword?: string } | null> => {
         try {
-            const apiKey = getGeminiApiKey();
-            if (!apiKey) {
-                const msg = "Gemini API Anahtarı eksik! Lütfen .env dosyanızı kontrol edin (VITE_GEMINI_API_KEY).";
-                console.error(msg);
-                alert(msg);
-                return null;
-            }
-            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const systemInstruction = `Sen uzman bir içerik üreticisi ve SEO uzmanısın. Türkçe içerik üretiyorsun.`;
             
             let userPrompt = "";
+            
+            // Extract existing titles to check for similarity
+            const existingTitles = existingGuides.map(g => g.title).join(", ");
+
             if (mode === 'topic') {
                 userPrompt = `Konu: "${topic}". Bu konu hakkında detaylı, eğitici bir Türkçe rehber hazırla.`;
             } else {
                 if (category) {
-                     userPrompt = `"${category}" kategorisinde, Türkiye'de ilgi çekecek, "Evergreen" nitelikte popüler bir konu belirle. Seçtiğin bu konu için tam bir rehber hazırla.`;
+                     userPrompt = `"${category}" kategorisinde, Türkiye'de ilgi çekecek, "Evergreen" nitelikte popüler ve ÖZGÜN bir konu belirle. Bu konu hakkında rehber hazırla.`;
                 } else {
-                     userPrompt = `Türkiye'de ilgi çekecek, "Evergreen" nitelikte popüler bir konu belirle. Seçtiğin bu konu için tam bir rehber hazırla.`;
+                     userPrompt = `Türkiye'de ilgi çekecek, "Evergreen" nitelikte popüler ve ÖZGÜN bir konu belirle. Bu konu hakkında rehber hazırla.`;
                 }
             }
 
-            // Avoid duplication
-            const existingTitles = existingGuides
-                .filter(g => !category || g.category === category)
-                .map(g => g.title)
-                .slice(0, 50)
-                .join(", ");
-                
+            // Anti-Duplication Rule
             if (existingTitles) {
-                userPrompt += `\n\nÖNEMLİ KURAL: Veritabanımda şu başlıklar zaten var: [${existingTitles}]. \nLütfen bu konuları veya bunların benzerlerini TEKRAR ETME. Bunlardan tamamen farklı, özgün bir konu seç.`;
+                userPrompt += `\n\nÇOK ÖNEMLİ KURAL: Veritabanımda şu başlıklar zaten var:\n[${existingTitles}]\n\nLütfen bu listedeki konuları veya bunlara ÇOK BENZEYEN konuları (örn: "Python" varsa "Python Giriş" üretme) ASLA TEKRAR ETME. Bunlardan tamamen farklı, özgün bir konu seç.`;
             }
 
-            userPrompt += `\n\nKategori olarak LÜTFEN şu listeden konuya en uygun olanını seç: ${VALID_CATEGORIES.join(', ')}.`;
+            // Category Selection Rule
+            if (!category) {
+                userPrompt += `\n\nKategori olarak LÜTFEN şu listeden rastgele ama konuya en uygun olanını seç: ${VALID_CATEGORIES.join(', ')}.`;
+            } else {
+                userPrompt += `\n\nKategori olarak ZORUNLU: "${category}".`;
+            }
 
             const response = await ai.models.generateContent({ 
                 model: "gemini-3-flash-preview", 
@@ -515,7 +529,7 @@ export const DataService = {
                             difficulty: { type: Type.STRING, enum: ["Kolay", "Orta", "İleri"] }, 
                             duration: { type: Type.STRING }, 
                             description: { type: Type.STRING }, 
-                            imageKeyword: { type: Type.STRING }, 
+                            imageKeyword: { type: Type.STRING, description: "Konuyu en iyi anlatan İngilizce tek kelime (Örn: finance, coding, travel)." }, 
                             steps: { 
                                 type: Type.ARRAY, 
                                 items: { 
@@ -579,22 +593,60 @@ export const DataService = {
             console.log("Auto-generation triggered by client...");
 
             const guides = await DataService.getGuides('tr'); 
-            const generatedData = await DataService.generateContentWithAI('auto', '', '', guides);
+            
+            // --- BALANCED CATEGORY SELECTION LOGIC ---
+            // 1. Count guides per category
+            const categoryCounts: Record<string, number> = {};
+            VALID_CATEGORIES.forEach(c => categoryCounts[c] = 0);
+            guides.forEach(g => {
+                if(categoryCounts[g.category] !== undefined) categoryCounts[g.category]++;
+            });
+
+            // 2. Find the category with the MOST content (to exclude it)
+            // If there's a tie, find one of them.
+            let maxCount = -1;
+            let excludedCategory = '';
+            
+            Object.entries(categoryCounts).forEach(([cat, count]) => {
+                if (count > maxCount) {
+                    maxCount = count;
+                    excludedCategory = cat;
+                }
+            });
+
+            // 3. Create a pool of candidate categories (excluding the populated one)
+            // If all categories are empty (maxCount 0), or only 1 category exists, pool is all valid.
+            let candidateCategories = VALID_CATEGORIES.filter(c => c !== excludedCategory);
+            
+            // Fallback: If for some reason candidates are empty (unlikely), reset to all
+            if (candidateCategories.length === 0) candidateCategories = VALID_CATEGORIES;
+
+            // 4. Pick a random category from the balanced pool
+            const targetCategory = candidateCategories[Math.floor(Math.random() * candidateCategories.length)];
+            
+            console.log(`Auto-Gen Strategy: Excluding '${excludedCategory}' (${maxCount}), Target: '${targetCategory}'`);
+
+            const generatedData = await DataService.generateContentWithAI('auto', '', targetCategory, guides);
 
             if (generatedData && generatedData.title) {
                 let slug = slugify(generatedData.title);
                 if (!slug) slug = `guide-${Date.now()}`;
                 
+                // --- NEW IMAGE PROVIDER: POLLINATIONS.AI ---
+                // Using Pollinations for diversity based on keyword
+                const imageKeyword = generatedData.imageKeyword || 'technology';
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imageKeyword)}?width=800&height=600&nologo=true&seed=${Math.floor(Math.random() * 10000)}`;
+
                 const newGuide: Guide = {
                     id: Date.now().toString(),
                     title: generatedData.title,
                     slug: slug,
                     language: 'tr',
-                    category: generatedData.category || 'Genel',
+                    category: generatedData.category || targetCategory,
                     difficulty: (generatedData.difficulty as any) || 'Kolay',
                     duration: generatedData.duration || '1 Gün',
                     description: generatedData.description || '',
-                    imageUrl: `https://source.unsplash.com/1600x900/?${encodeURIComponent(generatedData.imageKeyword || 'technology')}`,
+                    imageUrl: imageUrl,
                     steps: generatedData.steps || [],
                     related: [],
                     views: 0,

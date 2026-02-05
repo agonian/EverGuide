@@ -42,7 +42,13 @@ export interface AutoGenerateConfig {
     isGenerating: boolean; // Lock flag to prevent multiple users triggering at once
 }
 
+export interface ApiKeySettings {
+    gemini?: string;
+    googleAdsId?: string;
+}
+
 export interface SiteSettings {
+    siteName: string; // New: Site Title
     socials: SocialConfig;
     themeColor: ThemeColor;
     hero: {
@@ -50,6 +56,7 @@ export interface SiteSettings {
         en: HeroContent;
     };
     autoGen: AutoGenerateConfig;
+    apiKeys?: ApiKeySettings; // New field for storing keys in DB
 }
 
 export type Data = Guide[];
