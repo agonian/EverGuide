@@ -462,7 +462,9 @@ export const DataService = {
     generateContentWithAI: async (mode: 'topic' | 'auto', topic: string = '', category: string = '', existingGuides: Guide[] = []): Promise<Partial<Guide> & { imageKeyword?: string } | null> => {
         try {
             if (!process.env.API_KEY) {
-                console.error("API Key missing");
+                const msg = "Gemini API Anahtarı eksik! Lütfen .env dosyanızı kontrol edin.";
+                console.error(msg);
+                alert(msg);
                 return null;
             }
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
