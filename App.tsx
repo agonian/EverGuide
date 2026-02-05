@@ -85,8 +85,7 @@ const AppContent: React.FC = () => {
     if (googleAdsId && typeof window !== 'undefined') {
         const existingScript = document.querySelector(`script[src*="adsbygoogle.js"]`);
         if (!existingScript) {
-            console.log("Consent Granted. Injecting AdSense Script for ID:", googleAdsId);
-            console.log("Tüm Env Değişkenleri:", import.meta.env);
+            // Security: Logs removed to prevent exposing ID
             const script = document.createElement('script');
             script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${googleAdsId}`;
             script.async = true;
@@ -236,11 +235,10 @@ const AppContent: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
       e.preventDefault();
-      // SECURITY FIX: Compare against ENV variable or complex hardcoded string, not plain text
-      // Added optional chaining for safety
-      const adminPass = import.meta.env?.VITE_ADMIN_PASSWORD || 'Evergreen2024!';
+      // SECURITY FIX: Remove hardcoded fallback. Strict ENV check.
+      const adminPass = import.meta.env?.VITE_ADMIN_PASSWORD;
       
-      if (loginForm.username === 'admin' && loginForm.password === adminPass) {
+      if (adminPass && loginForm.username === 'admin' && loginForm.password === adminPass) {
           setIsAuthenticated(true);
           setUserId('admin');
           localStorage.setItem('evergreen_is_admin', 'true');

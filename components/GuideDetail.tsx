@@ -182,7 +182,8 @@ const GuideDetail: React.FC<GuideDetailProps> = ({ guide, allGuides, userId, onV
         <div className="lg:col-span-4 space-y-8">
             <div className="sticky top-24">
                 
-                <AdUnit type="square" className="mb-6" slotId="sidebar-slot" />
+                {/* UPDATED SLOT ID TO PREVENT 400 ERRORS */}
+                <AdUnit type="square" className="mb-6" slotId="1234567890" />
 
                 <h3 className="font-bold text-slate-900 dark:text-white mb-4 text-sm uppercase tracking-wide text-gray-400">{t('youMightLike')}</h3>
                 {relatedGuides.length > 0 ? (

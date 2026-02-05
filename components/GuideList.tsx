@@ -243,7 +243,8 @@ const GuideList: React.FC<GuideListProps> = ({ guides, searchTerm, onSearchChang
             {filteredGuides.slice(0, firstBatchSize).map((guide) => <GuideCard key={guide.id} guide={guide} progressMap={progressMap} onNav={handleNavigation} t={t} />)}
             </div>
             
-            <AdUnit type="horizontal" className="my-8" slotId="auto-generated-slot-1" />
+            {/* UPDATED SLOT ID TO PREVENT 400 ERRORS */}
+            <AdUnit type="horizontal" className="my-8" slotId="1234567890" />
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredGuides.slice(firstBatchSize).map((guide) => <GuideCard key={guide.id} guide={guide} progressMap={progressMap} onNav={handleNavigation} t={t} />)}

@@ -1,16 +1,16 @@
 
-import { initializeApp } from "firebase/app";
+import * as firebaseApp from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-// Firebase Configuration (Hardcoded)
+// Firebase Configuration (Loaded from Environment Variables)
 const firebaseConfig = {
-    apiKey: "AIzaSyC0QKRPin4w1PucR_rgeoQUS8_ULIXiEAA",
-    authDomain: "evergreenrehber.firebaseapp.com",
-    projectId: "evergreenrehber",
-    storageBucket: "evergreenrehber.firebasestorage.app",
-    messagingSenderId: "573065507920",
-    appId: "1:573065507920:web:6984b872b963737be58d55",
-    measurementId: "G-NXJ1CYGE57"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Quota Lock Check Logic
@@ -34,9 +34,9 @@ const isConfigured = !!firebaseConfig.apiKey;
 const shouldEnable = isConfigured && !isQuotaExceeded();
 
 if (!isConfigured) {
-    console.log("Firebase not configured properly.");
+    console.warn("Firebase configuration missing in .env file.");
 }
 
-export const app = shouldEnable ? initializeApp(firebaseConfig) : null;
+export const app = shouldEnable ? firebaseApp.initializeApp(firebaseConfig) : null;
 export const db = shouldEnable && app ? getFirestore(app) : null;
 export const isFirebaseEnabled = shouldEnable;

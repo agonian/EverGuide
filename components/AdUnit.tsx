@@ -37,7 +37,7 @@ const AdUnit: React.FC<AdUnitProps> = ({ type = 'horizontal', className = '', sl
                 observer.disconnect(); // Stop observing once loaded
             }
           } catch (e) {
-            console.error("AdSense push error:", e);
+            // Silent catch to avoid console spam
           }
         }
       }
@@ -78,15 +78,24 @@ const AdUnit: React.FC<AdUnitProps> = ({ type = 'horizontal', className = '', sl
   }
 
   return (
-    <div ref={containerRef} className={`flex justify-center my-6 min-h-[50px] ${className}`}>
-        <ins className="adsbygoogle"
-             style={{ display: 'block', ...sizeStyle }}
-             data-ad-client={clientId}
-             data-ad-slot={slotId}
-             data-ad-format={format}
-             data-full-width-responsive="true"
-             ref={adRef}>
-        </ins>
+    <div ref={containerRef} className={`relative flex justify-center my-6 ${className}`} style={{ minHeight: sizeStyle.height }}>
+        
+        {/* Placeholder Layer (Visible when ad is loading or blocked) */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg -z-0">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-slate-300 dark:text-slate-600">Reklam</span>
+        </div>
+
+        {/* Ad Layer (Z-index ensures it covers placeholder) */}
+        <div className="relative z-10 w-full flex justify-center">
+            <ins className="adsbygoogle"
+                 style={{ display: 'block', ...sizeStyle }}
+                 data-ad-client={clientId}
+                 data-ad-slot={slotId}
+                 data-ad-format={format}
+                 data-full-width-responsive="true"
+                 ref={adRef}>
+            </ins>
+        </div>
     </div>
   );
 };
