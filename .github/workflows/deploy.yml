@@ -12,27 +12,26 @@ jobs:
 
       - name: Deploy to Server
         uses: appleboy/ssh-action@master
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # ENV_FILE sırrını da içeri aktarıyoruz
           envs: ENV_FILE_CONTENT
-        env:
-          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
-         script: |
-          mkdir -p /home/web_apps/guidelonia
-          cd /home/web_apps/guidelonia
-          
-          # 1. Kodları Çek
-          if [ ! -d ".git" ]; then
-            git clone https://github.com/agonian/EverGuide.git .
-          else
-            git pull origin main
-          fi
+          script: |
+            mkdir -p /home/web_apps/guidelonia
+            cd /home/web_apps/guidelonia
+            
+            # 1. Kodları Çek
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/agonian/EverGuide.git .
+            else
+              git pull origin main
+            fi
 
-          # 2. .env Dosyasını "Işınla" (GitHub Secret'tan oluştur)
-          echo "$ENV_FILE_CONTENT" > .env
-          
-          # 3. Build Al ve Başlat (Artık .env var, build başarılı olacak)
-          docker compose up -d --build
+            # 2. .env Dosyasını "Işınla" (GitHub Secret'tan oluştur)
+            echo "$ENV_FILE_CONTENT" > .env
+            
+            # 3. Build Al ve Başlat (Artık .env var, build başarılı olacak)
+            docker compose up -d --build
