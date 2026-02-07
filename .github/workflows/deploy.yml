@@ -20,7 +20,7 @@ jobs:
           envs: ENV_FILE_CONTENT
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE }}
-        script: |
+         script: |
           mkdir -p /home/web_apps/guidelonia
           cd /home/web_apps/guidelonia
           
