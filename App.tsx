@@ -96,6 +96,7 @@ const AppContent: React.FC = () => {
   }, [settings, isConsentGiven]);
 
   // INITIALIZATION
+  //
   useEffect(() => {
     isMounted.current = true;
     
