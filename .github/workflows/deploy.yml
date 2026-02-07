@@ -1,0 +1,29 @@
+name: Deploy Guidelonia
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            mkdir -p /home/web_apps/guidelonia
+            cd /home/web_apps/guidelonia
+            # GitHub'dan en güncel kodları çekmek için:
+            # Not: REPONUN_URL_ADRESI kısmını kendi deponla değiştir!
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/agonian/EverGuide.git .
+            else
+              git pull origin main
+            fi
+            docker compose up -d --build
