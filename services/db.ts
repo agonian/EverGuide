@@ -45,7 +45,7 @@ const sanitizeForFirestore = (data: any) => {
 
 // Default Settings
 const DEFAULT_SETTINGS: SiteSettings = {
-    siteName: "Evergreen Rehber",
+    siteName: "Guidelonia Rehber",
     socials: { twitter: '', instagram: '', youtube: '', linkedin: '' },
     themeColor: 'default',
     hero: {
@@ -262,6 +262,21 @@ export const DataService = {
             }
             console.error("Error fetching guides from Firebase:", e);
             throw e;
+        }
+    },
+
+    // 1.5 Get ALL Guides (for Sitemap) - No language filtering
+    getAllGuides: async (): Promise<Guide[]> => {
+        if (!isFirebaseEnabled || !db || isQuotaExceeded) {
+            return [];
+        }
+        try {
+            const querySnapshot = await getDocs(collection(db, "guides"));
+            const dbGuides = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Guide));
+            return dbGuides;
+        } catch (e: any) {
+            console.error("Error fetching all guides for sitemap:", e);
+            return [];
         }
     },
 
