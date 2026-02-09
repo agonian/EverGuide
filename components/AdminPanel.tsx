@@ -260,7 +260,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
     setIsGeneratingSitemap(true);
     try {
         const allGuides = await DataService.getAllGuides();
-        const baseUrl = "https://evergreenrehber.web.app";
+        const baseUrl = "https://guidelonia.com";
         const today = new Date().toISOString().split('T')[0];
 
         let xml = `<?xml version="1.0" encoding="UTF-8"?>
