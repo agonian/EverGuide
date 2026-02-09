@@ -35,12 +35,13 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       
-      // Default: Granted (Temporary for AdSense approval)
+      // Varsayılan durumu REDDEDİLDİ yapıyoruz.
+      // Google'ın mavi kutusu (CMP), kullanıcı "Kabul Et" derse bunu otomatik "GRANTED"a çevirecek.
       gtag('consent', 'default', {
-        'ad_storage': 'granted',
-        'ad_user_data': 'granted',
-        'ad_personalization': 'granted',
-        'analytics_storage': 'granted'
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied'
       });
     </script>
 
