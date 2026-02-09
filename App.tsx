@@ -73,26 +73,6 @@ const AppContent: React.FC = () => {
       }
   };
 
-  // AD SCRIPT INJECTION LOGIC
-  useEffect(() => {
-    // Publisher ID retrieval priority: DB Settings -> Local Storage -> Environment Variable
-    const googleAdsId = settings.apiKeys?.googleAdsId || 
-                        localStorage.getItem('evergreen_google_ads_id') ||
-                        import.meta.env?.VITE_GOOGLE_ADS_ID;
-
-    if (googleAdsId && typeof window !== 'undefined') {
-        const existingScript = document.querySelector(`script[src*="adsbygoogle.js"]`);
-        if (!existingScript) {
-            const script = document.createElement('script');
-            // This ensures the exact requested format: <script async src="..." crossorigin="anonymous"></script>
-            script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${googleAdsId}`;
-            script.async = true;
-            script.crossOrigin = "anonymous";
-            document.head.appendChild(script);
-        }
-    }
-  }, [settings]);
-
   // INITIALIZATION
   //
   useEffect(() => {
