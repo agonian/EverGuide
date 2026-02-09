@@ -73,11 +73,9 @@ const AppContent: React.FC = () => {
       }
   };
 
-  // AD SCRIPT INJECTION LOGIC (Dependent on Consent)
+  // AD SCRIPT INJECTION LOGIC
   useEffect(() => {
-    // Only inject if consent is TRUE and ID exists
-    if (!isConsentGiven) return;
-
+    // Publisher ID retrieval priority: DB Settings -> Local Storage -> Environment Variable
     const googleAdsId = settings.apiKeys?.googleAdsId || 
                         localStorage.getItem('evergreen_google_ads_id') ||
                         import.meta.env?.VITE_GOOGLE_ADS_ID;
@@ -85,15 +83,15 @@ const AppContent: React.FC = () => {
     if (googleAdsId && typeof window !== 'undefined') {
         const existingScript = document.querySelector(`script[src*="adsbygoogle.js"]`);
         if (!existingScript) {
-            // Security: Logs removed to prevent exposing ID
             const script = document.createElement('script');
+            // This ensures the exact requested format: <script async src="..." crossorigin="anonymous"></script>
             script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${googleAdsId}`;
             script.async = true;
             script.crossOrigin = "anonymous";
             document.head.appendChild(script);
         }
     }
-  }, [settings, isConsentGiven]);
+  }, [settings]);
 
   // INITIALIZATION
   //
