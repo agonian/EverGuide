@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Guide, Step, SocialConfig, SiteSettings, ThemeColor } from '../types';
-import { Plus, Trash2, Save, Layout, Image as ImageIcon, Sparkles, Bot, X, Loader2, Settings, Globe, Wand2, Edit, Check, Clock, BarChart, CalendarDays, Eye, Palette, ExternalLink, Type as TypeIcon, Timer, RefreshCw, Key, Database, Languages } from 'lucide-react';
+import { Plus, Trash2, Save, Layout, Image as ImageIcon, Sparkles, Bot, X, Loader2, Settings, Globe, Wand2, Edit, Check, Clock, BarChart, CalendarDays, Eye, Palette, ExternalLink, Type as TypeIcon, Timer, RefreshCw, Key, Database, Languages, Download, FileJson } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { DataService, VALID_CATEGORIES, VALID_CATEGORIES_EN, slugify } from '../services/db';
 
@@ -33,6 +33,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
   const [apiKeys, setApiKeys] = useState({
       googleAds: ''
   });
+  
+  // Sitemap Generation State
+  const [isGeneratingSitemap, setIsGeneratingSitemap] = useState(false);
 
   useEffect(() => {
       setLocalSettings(settings);
@@ -252,6 +255,56 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
           }
       }
   };
+
+  const handleDownloadSitemap = async () => {
+    setIsGeneratingSitemap(true);
+    try {
+        const allGuides = await DataService.getAllGuides();
+        const baseUrl = "https://evergreenrehber.web.app";
+        const today = new Date().toISOString().split('T')[0];
+
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>`;
+
+        allGuides.forEach(g => {
+            const date = new Date(g.createdAt || Date.now()).toISOString().split('T')[0];
+            xml += `
+  <url>
+    <loc>${baseUrl}/#${g.slug}</loc>
+    <lastmod>${date}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`;
+        });
+
+        xml += `\n</urlset>`;
+
+        // Trigger Download
+        const blob = new Blob([xml], { type: 'text/xml' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sitemap.xml';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        alert(`Sitemap başarıyla oluşturuldu!\n\nToplam ${allGuides.length} rehber eklendi.\nBu dosyayı projenizin 'public' klasörüne koyup deploy etmelisiniz.`);
+
+    } catch (e) {
+        console.error("Sitemap generation failed", e);
+        alert("Sitemap oluşturulurken bir hata oluştu.");
+    } finally {
+        setIsGeneratingSitemap(false);
+    }
+  };
   
   const updateHeroText = (field: 'title' | 'titleHighlight' | 'description', value: string) => {
       setLocalSettings(prev => ({
@@ -425,7 +478,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
 
       {activeTab === 'settings' && (
         <form onSubmit={handleSettingsSave} className="max-w-4xl mx-auto space-y-8">
-            {/* ... Existing Settings Code ... */}
+            
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm border-l-4 border-l-sky-500">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <FileJson size={20} className="text-sky-600" /> SEO / Sitemap
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                    Siteniz "Single Page App" (SPA) olduğu için ve verileriniz Firebase'de tutulduğu için, Google'ın sitenizi tarayabilmesi adına düzenli olarak güncel bir sitemap oluşturup yüklemeniz gerekir.
+                    <br/><br/>
+                    Aşağıdaki butona bastığınızda, veritabanındaki <strong>tüm dillerdeki ({guides.length} adet)</strong> rehberler çekilir, XML formatına dönüştürülür ve bilgisayarınıza indirilir. 
+                    Bu dosyayı projenizin <code>public</code> klasörüne atıp yeniden deploy etmelisiniz.
+                </p>
+                <button 
+                    type="button" 
+                    onClick={handleDownloadSitemap} 
+                    disabled={isGeneratingSitemap}
+                    className="bg-sky-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-sky-700 transition-colors shadow-lg shadow-sky-200 dark:shadow-none flex items-center gap-2 disabled:opacity-70"
+                >
+                    {isGeneratingSitemap ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+                    Sitemap Oluştur ve İndir
+                </button>
+            </div>
+
              <div className="bg-white dark:bg-slate-800 p-8 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2"><Bot size={20} className="text-brand-600" /> {t('autoGenTitle')}</h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 border-l-4 border-indigo-200 dark:border-indigo-900 pl-4 py-1">{t('autoGenDesc')}</p>
