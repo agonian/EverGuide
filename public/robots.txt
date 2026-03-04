@@ -1,0 +1,10 @@
+# Tüm arama motoru botları için geçerli kurallar
+User-agent: *
+Allow: /
+
+# AdSense botları için özel izin (onay sürecini hızlandırabilir)
+User-agent: Mediapartners-Google
+Allow: /
+
+# Site haritanın yerini botlara bildir (URL'nin doğruluğundan emin ol)
+Sitemap: https://guidelonia.com/sitemap.xml
