@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Branded Favicon (Green Book/Leaf) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2316a34a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <title>Guidelonia</title>
+    <meta name="title" content="Guidelonia - Her Zaman Güncel Bilgi">
+    <meta name="description" content="Yazılım, Finans, Sağlık ve Kişisel Gelişim alanlarında, zamanı geçmeyen, güncel ve pratik adım adım rehberler. Öğrenme yolculuğuna yön ver." />
+    <meta name="keywords" content="rehber, yol haritası, nasıl yapılır, eğitim, yazılım öğrenme, finans, sağlık, kişisel gelişim, güncel içerik, adım adım kılavuz" />
+    <meta name="author" content="Guidelonia Rehber" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Turkish" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://guidelonia.com/" />
+    <meta property="og:title" content="Guidelonia - Öğrenme Yolculuğuna Yön Ver" />
+    <meta property="og:description" content="Merak ettiğin konularda uzmanlaşmak için adım adım rehberleri keşfet. Yapay zeka destekli, her zaman güncel içerikler." />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1456324504439-367cee101252?auto=format&fit=crop&w=1200&h=630&q=80" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://guidelonia.com/" />
+    <meta property="twitter:title" content="Guidelonia - Öğrenme Yolculuğuna Yön Ver" />
+    <meta property="twitter:description" content="Merak ettiğin konularda uzmanlaşmak için adım adım rehberleri keşfet." />
+    <meta property="twitter:image" content="https://images.unsplash.com/photo-1456324504439-367cee101252?auto=format&fit=crop&w=1200&h=630&q=80" />
+
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="0JJFP_RZOHM5FcNrwf5KZ8PI_-2JFOZ8oOvnkbryxS8" />
+    
+    <!-- Google Consent Mode Defaults (Must be before any gtag/ads scripts) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      
+      // Varsayılan durumu REDDEDİLDİ yapıyoruz.
+      // Google'ın mavi kutusu (CMP), kullanıcı "Kabul Et" derse bunu otomatik "GRANTED"a çevirecek.
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied'
+      });
+    </script>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8234894023687348"
+     crossorigin="anonymous"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: 'var(--brand-50)',
+                100: 'var(--brand-100)',
+                500: 'var(--brand-500)',
+                600: 'var(--brand-600)',
+                900: 'var(--brand-900)',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+      
+      :root {
+        /* Default Theme (Slate/Blueish) */
+        --brand-50: #f8fafc;
+        --brand-100: #f1f5f9;
+        --brand-500: #64748b;
+        --brand-600: #475569;
+        --brand-900: #0f172a;
+      }
+
+      /* Theme Presets Helper Classes (applied via JS) */
+      .theme-indigo {
+        --brand-50: #eef2ff;
+        --brand-100: #e0e7ff;
+        --brand-500: #6366f1;
+        --brand-600: #4f46e5;
+        --brand-900: #312e81;
+      }
+
+      .theme-green {
+        --brand-50: #f0fdf4;
+        --brand-100: #dcfce7;
+        --brand-500: #22c55e;
+        --brand-600: #16a34a;
+        --brand-900: #14532d;
+      }
+
+      .theme-rose {
+        --brand-50: #fff1f2;
+        --brand-100: #ffe4e6;
+        --brand-500: #f43f5e;
+        --brand-600: #e11d48;
+        --brand-900: #881337;
+      }
+
+      .theme-amber {
+        --brand-50: #fffbeb;
+        --brand-100: #fef3c7;
+        --brand-500: #f59e0b;
+        --brand-600: #d97706;
+        --brand-900: #78350f;
+      }
+
+      body { font-family: 'Inter', sans-serif; background-color: #f8fafc; transition: background-color 0.3s, color 0.3s; }
+      html { scroll-behavior: smooth; }
+      
+      /* Dark Mode Base Overrides */
+      .dark body { background-color: #0f172a; color: #f8fafc; }
+
+      /* Animation Utilities */
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      
+      .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+      .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
+    "react/": "https://esm.sh/react@18.3.1/",
+    "lucide-react": "https://esm.sh/lucide-react@0.263.1",
+    "@google/genai": "https://esm.sh/@google/genai@^1.39.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "html2canvas": "https://esm.sh/html2canvas@1.4.1",
+    "jspdf": "https://esm.sh/jspdf@2.5.1"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <!-- CRITICAL FIX: Entry point for Vite/React -->
+    <script type="module" src="./index.tsx"></script>
+  </body>
+</html>
