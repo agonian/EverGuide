@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => {
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, (process as any).cwd(), '');
 
+  server: {
+    allowedHosts: ['guidelonia.com', 'www.guidelonia.com']
+  }
+  
   return {
     plugins: [react()],
     // GitHub Pages ve alt klasör dağıtımları için relative path kullanımı
