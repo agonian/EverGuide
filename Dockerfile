@@ -1,27 +1,19 @@
-# 1. Aşama: Derleme (Build)
-FROM node:20-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-# Frontend'i derle
-RUN npm run build
-# server.ts'yi server.js'ye çevirmek yerine doğrudan ts-node ile çalıştıracağız ama bağımlılıkları tam kuruyoruz
-
-# 2. Aşama: Çalıştırma (Runtime)
 FROM node:20-alpine
 WORKDIR /app
 
-# Sadece gerekli dosyaları alalım
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package*.json ./
-COPY --from=build /app/server.ts ./
-COPY --from=build /app/public ./public
-
-# Üretim için her şeyi kuralım (ts-node dahil)
+# 1. Bağımlılıkları kur (tsx burada yüklenecek)
+COPY package*.json ./
 RUN npm install
 
+# 2. Tüm dosyaları kopyala
+COPY . .
+
+# 3. Frontend'i derle (dist klasörü oluşsun)
+RUN npm run build
+
+# 4. Uygulama portunu aç
 EXPOSE 3000
 
-# ES modülleri için ts-node'u doğru loader ile ayağa kaldırıyoruz
-CMD ["node", "--loader", "ts-node/esm", "server.ts"]
+# 5. Sitenin motorunu çalıştır
+# tsx hem ESM desteği verir hem de .ts dosyalarını şak diye çalıştırır
+CMD ["npx", "tsx", "server.ts"]
