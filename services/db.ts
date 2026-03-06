@@ -564,7 +564,13 @@ export const DataService = {
     // 9.5 Generate Image Only
     generateImage: async (prompt: string): Promise<string> => {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = process.env.API_KEY;
+            if (!apiKey) {
+                console.warn("API Key is missing, skipping Gemini image generation.");
+                throw new Error("API Key missing");
+            }
+
+            const ai = new GoogleGenAI({ apiKey });
             const imagePrompt = `A high quality, modern, photorealistic blog cover image about ${prompt}, 4k resolution, cinematic lighting`;
             
             const imageResponse = await ai.models.generateContent({
@@ -575,12 +581,14 @@ export const DataService = {
             });
 
             // Extract base64 image
-            for (const part of imageResponse.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    return `data:image/png;base64,${part.inlineData.data}`;
+            if (imageResponse.candidates && imageResponse.candidates[0].content && imageResponse.candidates[0].content.parts) {
+                for (const part of imageResponse.candidates[0].content.parts) {
+                    if (part.inlineData) {
+                        return `data:image/png;base64,${part.inlineData.data}`;
+                    }
                 }
             }
-            throw new Error("No image data found");
+            throw new Error("No image data found in response");
         } catch (imgError) {
             console.warn("Gemini Image Generation failed, falling back to Pollinations:", imgError);
             return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=600&nologo=true&seed=${Math.floor(Math.random() * 10000)}`;
