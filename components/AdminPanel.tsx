@@ -145,6 +145,59 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
     }
   };
 
+  const handleRegenerateImage = async () => {
+    if (!formData.title) return;
+    setIsGenerating(true);
+    try {
+        // Simple prompt for image generation
+        const prompt = `A high quality, modern, photorealistic blog cover image about ${formData.title}, 4k resolution, cinematic lighting`;
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        const imageResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [{ text: prompt }] }
+        });
+
+        let newImageUrl = '';
+        for (const part of imageResponse.candidates[0].content.parts) {
+            if (part.inlineData) {
+                newImageUrl = `data:image/png;base64,${part.inlineData.data}`;
+                break;
+            }
+        }
+
+        if (newImageUrl) {
+            setFormData(prev => ({ ...prev, imageUrl: newImageUrl }));
+        } else {
+            alert("Görsel üretilemedi.");
+        }
+    } catch (error) {
+        console.error("Image regeneration failed:", error);
+        alert("Görsel üretilirken hata oluştu.");
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
+  const uploadImageToServer = async (base64Image: string, slug: string): Promise<string | null> => {
+      try {
+          const response = await fetch('/api/upload-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ image: base64Image, slug })
+          });
+          
+          if (response.ok) {
+              const data = await response.json();
+              return data.url;
+          }
+          return null;
+      } catch (error) {
+          console.error("Upload failed:", error);
+          return null;
+      }
+  };
+
   const handleSubmitContent = async (e: React.FormEvent) => {
     e.preventDefault();
     const validationErrors: Record<string, string> = {};
@@ -156,6 +209,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
     
     let slug = slugify(formData.title!);
     if (!slug) slug = `guide-${Date.now()}`;
+
+    // Handle Image Upload if Base64
+    let finalImageUrl = formData.imageUrl;
+    if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
+        const uploadedUrl = await uploadImageToServer(finalImageUrl, slug);
+        if (uploadedUrl) {
+            finalImageUrl = uploadedUrl;
+        } else {
+            alert("Görsel sunucuya yüklenemedi, işlem iptal edildi.");
+            setIsSaving(false);
+            return;
+        }
+    }
     
     const newGuide: Guide = {
         id: editingId || Date.now().toString(),
@@ -165,7 +231,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
         difficulty: (formData.difficulty as any) || 'Kolay',
         duration: formData.duration!,
         description: formData.description!,
-        imageUrl: formData.imageUrl || 'https://picsum.photos/800/600',
+        imageUrl: finalImageUrl || 'https://picsum.photos/800/600',
         steps: steps.filter(s => s.step_title.trim()),
         related: [],
         views: formData.views,
@@ -373,7 +439,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
                             </div>
                         </div>
                         <div><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Süre</label><input name="duration" value={formData.duration} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none" placeholder={durationPlaceholder} /></div>
-                        <div><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Kapak Görseli (URL)</label><div className="relative"><ImageIcon size={14} className="absolute left-3 top-2.5 text-slate-400" /><input name="imageUrl" value={formData.imageUrl} onChange={handleChange} className="w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none" /></div></div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Kapak Görseli</label>
+                            
+                            {formData.imageUrl && (
+                                <div className="mb-3 relative group">
+                                    <img src={formData.imageUrl} alt="Preview" className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-600" />
+                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                                        <button type="button" onClick={handleRegenerateImage} disabled={isGenerating} className="bg-white text-slate-900 px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-slate-100">
+                                            {isGenerating ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+                                            Yeniden Üret
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="relative">
+                                <ImageIcon size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                                <input name="imageUrl" value={formData.imageUrl} onChange={handleChange} className="w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Görsel URL veya Base64" />
+                            </div>
+                            <button type="button" onClick={handleRegenerateImage} disabled={isGenerating || !formData.title} className="mt-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                                <Sparkles size={12} /> Yapay Zeka ile Görsel Üret
+                            </button>
+                        </div>
                         <div><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Açıklama</label><textarea name="description" value={formData.description} onChange={handleChange} rows={4} className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-brand-500 outline-none resize-none" /></div>
                     </div>
                 </div>
