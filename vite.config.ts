@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
     },
     define: {
-      // Polyfill process.env.API_KEY to map to the VITE_GEMINI_API_KEY
-      'process.env.API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+      // Polyfill process.env.API_KEY
+      'process.env.API_KEY': JSON.stringify(process.env.API_KEY || env.API_KEY || env.VITE_GEMINI_API_KEY),
     }
   };
 });
