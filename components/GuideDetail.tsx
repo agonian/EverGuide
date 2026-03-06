@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Guide } from '../types';
 import { DataService } from '../services/db';
-import { ArrowLeft, Clock, BarChart, CheckCircle2, Share2, Printer, BookOpen, ChevronRight, Eye, CalendarDays, ListChecks, Check, Sparkles, Trophy, RotateCcw, ChevronLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Clock, BarChart, CheckCircle2, Share2, Printer, BookOpen, ChevronRight, Eye, CalendarDays, ListChecks, Check, Sparkles, Trophy, RotateCcw, ChevronLeft, Calendar } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
