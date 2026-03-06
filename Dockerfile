@@ -5,5 +5,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 EXPOSE 3000
+
+ENV NODE_ENV=production
 # En basit çalıştırma yolu:
 CMD ["npx", "tsx", "server.ts"]
