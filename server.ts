@@ -29,11 +29,15 @@ async function startServer() {
         return res.status(400).json({ error: 'Image and slug are required' });
       }
 
-      // Remove header if present (data:image/png;base64,...)
+      // Detect mime type and extension
+      const matches = image.match(/^data:image\/(\w+);base64,/);
+      const ext = matches ? matches[1] : 'png';
+      
+      // Remove header
       const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
       const buffer = Buffer.from(base64Data, 'base64');
       
-      const fileName = `${slug}-${Date.now()}.png`;
+      const fileName = `${slug}-${Date.now()}.${ext}`;
       const filePath = path.join(uploadDir, fileName);
 
       fs.writeFileSync(filePath, buffer);
