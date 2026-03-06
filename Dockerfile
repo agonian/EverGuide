@@ -1,4 +1,4 @@
-# 1. Aşama: Frontend Derleme (Build)
+# 1. Aşama: Derleme
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
@@ -6,22 +6,17 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# 2. Aşama: Çalıştırma (Runtime)
+# 2. Aşama: Çalıştırma
 FROM node:20-alpine
 WORKDIR /app
-
-# Sadece gerekli dosyaları kopyalıyoruz
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package*.json ./
+# Vite'ı ana bağımlılıklara aldığımız için bu sefer bulacak
+RUN npm install
 COPY --from=build /app/server.ts ./
-COPY --from=build /app/public ./public
-
-# Üretim için gerekli paketleri kuruyoruz
-RUN npm install --omit=dev
 RUN npm install -g ts-node typescript
 
-# Port ayarı (server.ts'deki 3000 portuyla eşleşmeli)
 EXPOSE 3000
-
-# Uygulamayı başlat
+# NODE_ENV'yi üretim olarak set ediyoruz ki Vite middleware çalışmasın
+ENV NODE_ENV=production
 CMD ["npx", "ts-node", "server.ts"]
