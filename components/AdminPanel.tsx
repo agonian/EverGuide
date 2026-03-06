@@ -149,23 +149,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
     if (!formData.title) return;
     setIsGenerating(true);
     try {
-        // Simple prompt for image generation
-        const prompt = `A high quality, modern, photorealistic blog cover image about ${formData.title}, 4k resolution, cinematic lighting`;
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        const imageResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: prompt }] }
-        });
-
-        let newImageUrl = '';
-        for (const part of imageResponse.candidates[0].content.parts) {
-            if (part.inlineData) {
-                newImageUrl = `data:image/png;base64,${part.inlineData.data}`;
-                break;
-            }
-        }
-
+        const newImageUrl = await DataService.generateImage(formData.title);
         if (newImageUrl) {
             setFormData(prev => ({ ...prev, imageUrl: newImageUrl }));
         } else {
@@ -190,8 +174,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
           if (response.ok) {
               const data = await response.json();
               return data.url;
+          } else {
+              console.error("Upload failed with status:", response.status);
+              return null;
           }
-          return null;
       } catch (error) {
           console.error("Upload failed:", error);
           return null;
