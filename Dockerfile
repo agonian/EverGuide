@@ -1,11 +1,14 @@
-FROM node:20-alpine
+# 1. Aşama: Dosyaları Hazırla (Build)
+FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
-EXPOSE 3000
 
-ENV NODE_ENV=production
-# En basit çalıştırma yolu:
-CMD ["npx", "tsx", "server.ts"]
+# 2. Aşama: Nginx ile Yayınla
+FROM nginx:stable-alpine
+# Vite'ın oluşturduğu 'dist' klasörünü Nginx'in içine atıyoruz
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
