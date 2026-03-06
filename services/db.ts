@@ -550,37 +550,40 @@ export const DataService = {
             const contentData = JSON.parse(response.text || "{}");
             if (!contentData.title) return null;
 
-            // 2. Generate Image with Gemini (Nano Banana)
-            let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(contentData.imageKeyword || 'technology')}?width=800&height=600&nologo=true&seed=${Math.floor(Math.random() * 10000)}`;
-            
-            try {
-                // Use the generated prompt or fallback to keyword
-                const imagePrompt = contentData.imagePrompt || `A high quality, modern, photorealistic blog cover image about ${contentData.imageKeyword || 'technology'}, 4k resolution, cinematic lighting`;
-                
-                const imageResponse = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash-image',
-                    contents: {
-                        parts: [{ text: imagePrompt }]
-                    }
-                });
-
-                // Extract base64 image
-                for (const part of imageResponse.candidates[0].content.parts) {
-                    if (part.inlineData) {
-                        imageUrl = `data:image/png;base64,${part.inlineData.data}`;
-                        break;
-                    }
-                }
-            } catch (imgError) {
-                console.warn("Gemini Image Generation failed, falling back to Pollinations:", imgError);
-                // Fallback URL is already set
-            }
+            // 2. Generate Image
+            const imageUrl = await DataService.generateImage(contentData.imagePrompt || contentData.title);
 
             return { ...contentData, imageUrl };
 
         } catch (error) {
             console.error("AI Generation failed:", error);
             return null;
+        }
+    },
+
+    // 9.5 Generate Image Only
+    generateImage: async (prompt: string): Promise<string> => {
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const imagePrompt = `A high quality, modern, photorealistic blog cover image about ${prompt}, 4k resolution, cinematic lighting`;
+            
+            const imageResponse = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: {
+                    parts: [{ text: imagePrompt }]
+                }
+            });
+
+            // Extract base64 image
+            for (const part of imageResponse.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    return `data:image/png;base64,${part.inlineData.data}`;
+                }
+            }
+            throw new Error("No image data found");
+        } catch (imgError) {
+            console.warn("Gemini Image Generation failed, falling back to Pollinations:", imgError);
+            return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=600&nologo=true&seed=${Math.floor(Math.random() * 10000)}`;
         }
     },
 
