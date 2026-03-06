@@ -163,12 +163,43 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
     }
   };
 
+  const compressImage = (base64Str: string, maxWidth = 1200, quality = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        } else {
+            resolve(base64Str); // Fallback to original if context fails
+        }
+      };
+      img.onerror = () => resolve(base64Str); // Fallback on error
+    });
+  };
+
   const uploadImageToServer = async (base64Image: string, slug: string): Promise<string | null> => {
       try {
+          // Compress image before upload to avoid 413 Payload Too Large
+          const compressedImage = await compressImage(base64Image);
+          
           const response = await fetch('/api/upload-image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ image: base64Image, slug })
+              body: JSON.stringify({ image: compressedImage, slug })
           });
           
           if (response.ok) {
@@ -176,6 +207,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ guides, onSave, onDelete, onCan
               return data.url;
           } else {
               console.error("Upload failed with status:", response.status);
+              if (response.status === 413) {
+                  alert("Görsel boyutu çok büyük olduğu için yüklenemedi. Lütfen daha küçük bir görsel deneyin.");
+              }
               return null;
           }
       } catch (error) {
